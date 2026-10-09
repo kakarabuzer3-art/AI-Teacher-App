@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Teacher App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700;800&family=Figtree:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: chalkboard lesson banner on top, then Sign in and Sign up cards side by side (stacked on phones). */
+:root {
+  --bg: #eef3f1;
+  --surface: #ffffff;
+  --ink: #12231d;
+  --muted: #566a62;
+  --line: #d2ddd8;
+  --board: #17382d;
+  --board-ink: #eaf3ee;
+  --chalk: #f2c14e;
+  --accent: #1f6b53;
+  --accent-ink: #ffffff;
+  --accent-soft: #dcefe7;
+  --ok: #1d7a46;
+  --warn: #9a5700;
+  --bad: #b3261e;
+  --font-display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1612; --surface: #12241d; --ink: #e6f0eb; --muted: #9bb0a6; --line: #25392f;
+    --board: #0f2a21; --board-ink: #eaf3ee; --chalk: #f2c14e;
+    --accent: #5fd0a6; --accent-ink: #062016; --accent-soft: #14382c;
+    --ok: #62cc90; --warn: #e5a04a; --bad: #f08a82;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b1612; --surface: #12241d; --ink: #e6f0eb; --muted: #9bb0a6; --line: #25392f;
+  --board: #0f2a21; --board-ink: #eaf3ee; --chalk: #f2c14e;
+  --accent: #5fd0a6; --accent-ink: #062016; --accent-soft: #14382c;
+  --ok: #62cc90; --warn: #e5a04a; --bad: #f08a82;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-inline: 16px; padding-block: 24px 56px; min-height: 100vh;
+}
+.wrap { max-width: 960px; margin-inline: auto; display: flex; flex-direction: column; gap: 24px; }
+.brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 700; font-size: 18px; }
+.brand svg { width: 30px; height: 30px; }
+.board {
+  background: var(--board); color: var(--board-ink); border-radius: 16px;
+  padding: 28px; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 24px; align-items: center;
+  border: 6px solid color-mix(in srgb, var(--board) 60%, var(--ink));
+}
+.board .tag { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--chalk); margin: 0 0 10px; }
+.board h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(28px, 5vw, 42px); line-height: 1.08; margin: 0 0 10px; text-wrap: balance; letter-spacing: -0.01em; }
+.board p.lead { margin: 0; color: color-mix(in srgb, var(--board-ink) 80%, transparent); max-width: 46ch; }
+.lesson { background: color-mix(in srgb, var(--board-ink) 8%, transparent); border: 1px dashed color-mix(in srgb, var(--board-ink) 40%, transparent); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.lesson .t { font-family: var(--font-mono); font-size: 12px; color: var(--chalk); text-transform: uppercase; letter-spacing: 0.08em; }
+.lesson .q { font-family: var(--font-display); font-size: 20px; font-weight: 600; }
+.lesson .a { font-family: var(--font-mono); font-size: 13px; color: color-mix(in srgb, var(--board-ink) 85%, transparent); }
+.bar { height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--board-ink) 20%, transparent); overflow: hidden; }
+.bar i { display: block; height: 100%; width: 68%; background: var(--chalk); }
+@media (max-width: 720px) { .board { grid-template-columns: minmax(0, 1fr); padding: 20px; } }
+.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
+@media (max-width: 720px) { .cards { grid-template-columns: minmax(0, 1fr); } }
+.card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 24px; min-width: 0;
+  box-shadow: 0 12px 32px -18px color-mix(in srgb, var(--ink) 30%, transparent);
+}
+.card h2 { font-family: var(--font-display); font-size: 24px; font-weight: 700; margin: 0 0 4px; }
+.card .sub { color: var(--muted); margin: 0 0 18px; font-size: 14px; }
+.social { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 11px 14px; font: 600 14px var(--font-body); cursor: pointer; }
+.social:hover { background: var(--accent-soft); }
+.social svg { width: 18px; height: 18px; fill: currentColor; }
+.divider { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 12px; margin: 16px 0; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; }
+.divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+form { display: flex; flex-direction: column; gap: 14px; }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+label, legend { font-size: 13px; font-weight: 600; }
+fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.row a, .foot a { color: var(--accent); font-size: 13px; }
+input[type="text"], input[type="email"], input[type="password"] {
+  width: 100%; font: 400 15px var(--font-body); color: var(--ink); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+}
+input::placeholder { color: var(--muted); }
+input:focus-visible, button:focus-visible, a:focus-visible, .role input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+input[aria-invalid="true"] { border-color: var(--bad); }
+.pw { position: relative; }
+.pw input { padding-right: 64px; }
+.toggle-pw { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: transparent; border: 0; color: var(--accent); font: 600 12px var(--font-body); padding: 6px 8px; border-radius: 6px; cursor: pointer; }
+.roles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 6px; }
+.role { position: relative; }
+.role input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.role span { display: block; text-align: center; padding: 9px 6px; border: 1px solid var(--line); border-radius: 10px; font-size: 13px; font-weight: 600; background: var(--bg); }
+.role input:checked + span { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.meter { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 2px; }
+.meter span { height: 4px; border-radius: 2px; background: var(--line); }
+.meter[data-level="1"] span:nth-child(-n+1) { background: var(--bad); }
+.meter[data-level="2"] span:nth-child(-n+2) { background: var(--warn); }
+.meter[data-level="3"] span:nth-child(-n+3) { background: var(--ok); }
+.meter[data-level="4"] span:nth-child(-n+4) { background: var(--ok); }
+.hint { font-size: 12px; color: var(--muted); margin: 0; min-height: 1.4em; }
+.check { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--muted); font-weight: 400; }
+.check input { margin-top: 3px; accent-color: var(--accent); }
+.primary { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 10px; padding: 12px 14px; font: 600 15px var(--font-body); cursor: pointer; }
+.primary:hover { filter: brightness(1.07); }
+.status { margin: 0; font-size: 13px; min-height: 1.4em; }
+.status.ok { color: var(--ok); }
+.status.err { color: var(--bad); }
+.foot { margin: 18px 0 0; font-size: 13px; color: var(--muted); }
+.note { margin: 0; font-size: 12px; color: var(--muted); font-family: var(--font-mono); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="brand">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="4" width="28" height="19" rx="4" fill="var(--board)"/><path d="M9 12h8M9 16h12" stroke="var(--chalk)" stroke-width="2" stroke-linecap="round" fill="none"/><path d="M11 27l5-4 5 4" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+    AI Teacher App
+  </div>
+
+  <section class="board" aria-label="Sample lesson">
+    <div>
+      <p class="tag">Class is open</p>
+      <h1>Learn at your pace, with a teacher that explains again.</h1>
+      <p class="lead">Sign in to continue your lessons, or create an account to get a study plan built around you.</p>
+    </div>
+    <div class="lesson" aria-hidden="true">
+      <span class="t">Lesson 4 · Fractions</span>
+      <span class="q">What is 3/4 + 1/8?</span>
+      <span class="a">7/8, because 6/8 + 1/8 = 7/8</span>
+      <div class="bar"><i></i></div>
+      <span class="a">Example progress: 17 of 25 questions</span>
+    </div>
+  </section>
+
+  <div class="cards">
+    <section class="card" aria-labelledby="signin-title">
+      <h2 id="signin-title">Sign in</h2>
+      <p class="sub">Welcome back. Your lessons are saved.</p>
+      <button class="social" type="button" id="gh-in">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.5 7.5 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+        Continue with GitHub
+      </button>
+      <div class="divider">or</div>
+      <form id="signin-form" novalidate>
+        <div class="field">
+          <label for="in-email">Email</label>
+          <input id="in-email" type="email" autocomplete="email" placeholder="you@example.com" required>
+        </div>
+        <div class="field">
+          <div class="row">
+            <label for="in-pass">Password</label>
+            <a href="#forgot" id="forgot">Forgot password?</a>
+          </div>
+          <div class="pw">
+            <input id="in-pass" type="password" autocomplete="current-password" placeholder="Your password" required>
+            <button type="button" class="toggle-pw" data-target="in-pass" aria-label="Show password">Show</button>
+          </div>
+        </div>
+        <button class="primary" type="submit">Sign in</button>
+        <p class="status" id="in-status" role="status" aria-live="polite"></p>
+      </form>
+      <p class="foot">New here? <a href="#signup" id="to-signup">Create an account</a></p>
+    </section>
+
+    <section class="card" aria-labelledby="signup-title" id="signup">
+      <h2 id="signup-title">Sign up</h2>
+      <p class="sub">Free to start. No card needed.</p>
+      <button class="social" type="button" id="gh-up">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.5 7.5 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+        Sign up with GitHub
+      </button>
+      <div class="divider">or</div>
+      <form id="signup-form" novalidate>
+        <fieldset>
+          <legend>I am a</legend>
+          <div class="roles">
+            <label class="role"><input type="radio" name="role" value="student" id="role-student" checked><span>Student</span></label>
+            <label class="role"><input type="radio" name="role" value="teacher" id="role-teacher"><span>Teacher</span></label>
+            <label class="role"><input type="radio" name="role" value="parent" id="role-parent"><span>Parent</span></label>
+          </div>
+        </fieldset>
+        <div class="field">
+          <label for="up-name">Full name</label>
+          <input id="up-name" type="text" autocomplete="name" placeholder="Your name" required>
+        </div>
+        <div class="field">
+          <label for="up-email">Email</label>
+          <input id="up-email" type="email" autocomplete="email" placeholder="you@example.com" required>
+        </div>
+        <div class="field">
+          <label for="up-pass">Password</label>
+          <div class="pw">
+            <input id="up-pass" type="password" autocomplete="new-password" placeholder="At least 8 characters" required>
+            <button type="button" class="toggle-pw" data-target="up-pass" aria-label="Show password">Show</button>
+          </div>
+          <div class="meter" id="meter" data-level="0" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+          <p class="hint" id="pw-hint">Use 8+ characters with a mix of letters, numbers and symbols.</p>
+        </div>
+        <label class="check" for="up-terms">
+          <input id="up-terms" type="checkbox">
+          <span>I agree to the Terms and Privacy Policy.</span>
+        </label>
+        <button class="primary" type="submit">Create account</button>
+        <p class="status" id="up-status" role="status" aria-live="polite"></p>
+      </form>
+      <p class="foot">Already have an account? <a href="#signin" id="to-signin">Sign in</a></p>
+    </section>
+  </div>
+
+  <p class="note">Preview only. Forms are checked in the browser and nothing is sent anywhere.</p>
+</div>
+
+<script>
+(function () {
+  var emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  function setStatus(el, msg, kind) { el.textContent = msg; el.className = "status" + (kind ? " " + kind : ""); }
+  function mark(input, bad) { if (bad) input.setAttribute("aria-invalid", "true"); else input.removeAttribute("aria-invalid"); }
+
+  document.querySelectorAll(".toggle-pw").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var input = document.getElementById(btn.getAttribute("data-target"));
+      var show = input.type === "password";
+      input.type = show ? "text" : "password";
+      btn.textContent = show ? "Hide" : "Show";
+      btn.setAttribute("aria-label", show ? "Hide password" : "Show password");
+    });
+  });
+
+  var inForm = document.getElementById("signin-form");
+  var inEmail = document.getElementById("in-email");
+  var inPass = document.getElementById("in-pass");
+  var inStatus = document.getElementById("in-status");
+  inForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var badEmail = !emailRe.test(inEmail.value.trim());
+    var badPass = inPass.value.length === 0;
+    mark(inEmail, badEmail); mark(inPass, badPass);
+    if (badEmail) { setStatus(inStatus, "Enter a valid email address, like you@example.com.", "err"); inEmail.focus(); return; }
+    if (badPass) { setStatus(inStatus, "Enter your password to continue.", "err"); inPass.focus(); return; }
+    setStatus(inStatus, "Details look good. This preview does not sign anyone in.", "ok");
+  });
+  document.getElementById("forgot").addEventListener("click", function (e) {
+    e.preventDefault();
+    setStatus(inStatus, "Password reset is not connected in this preview.", "");
+  });
+
+  var upPass = document.getElementById("up-pass");
+  var meter = document.getElementById("meter");
+  var hint = document.getElementById("pw-hint");
+  function score(p) {
+    var s = 0;
+    if (p.length >= 8) s++;
+    if (/[a-z]/.test(p) && /[A-Z]/.test(p)) s++;
+    if (/\d/.test(p)) s++;
+    if (/[^A-Za-z0-9]/.test(p) && p.length >= 8) s++;
+    return s;
+  }
+  var labels = ["Use 8+ characters with a mix of letters, numbers and symbols.", "Weak. Add more characters.", "Fair. Add numbers or capitals.", "Good. A symbol would make it stronger.", "Strong password."];
+  upPass.addEventListener("input", function () {
+    var s = upPass.value ? score(upPass.value) : 0;
+    if (upPass.value && s === 0) s = 1;
+    meter.setAttribute("data-level", String(s));
+    hint.textContent = upPass.value ? labels[s] : labels[0];
+  });
+
+  var upForm = document.getElementById("signup-form");
+  var upName = document.getElementById("up-name");
+  var upEmail = document.getElementById("up-email");
+  var upTerms = document.getElementById("up-terms");
+  var upStatus = document.getElementById("up-status");
+  upForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var badName = upName.value.trim().length < 2;
+    var badEmail = !emailRe.test(upEmail.value.trim());
+    var badPass = upPass.value.length < 8;
+    mark(upName, badName); mark(upEmail, badEmail); mark(upPass, badPass);
+    if (badName) { setStatus(upStatus, "Enter your full name.", "err"); upName.focus(); return; }
+    if (badEmail) { setStatus(upStatus, "Enter a valid email address, like you@example.com.", "err"); upEmail.focus(); return; }
+    if (badPass) { setStatus(upStatus, "Choose a password with at least 8 characters.", "err"); upPass.focus(); return; }
+    if (!upTerms.checked) { setStatus(upStatus, "Tick the box to accept the Terms and Privacy Policy.", "err"); upTerms.focus(); return; }
+    setStatus(upStatus, "Details look good. This preview does not create an account.", "ok");
+  });
+
+  document.getElementById("to-signup").addEventListener("click", function (e) { e.preventDefault(); upName.focus(); });
+  document.getElementById("to-signin").addEventListener("click", function (e) { e.preventDefault(); inEmail.focus(); });
+  ["gh-in", "gh-up"].forEach(function (id) {
+    document.getElementById(id).addEventListener("click", function () {
+      setStatus(id === "gh-in" ? inStatus : upStatus, "GitHub login is not connected in this preview.", "");
+    });
+  });
+})();
+</script>
+</body>
+</html>
